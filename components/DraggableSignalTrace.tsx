@@ -21,9 +21,9 @@ interface DraggableSignalTraceProps {
 }
 
 const WIDTH = 640;
-const HEIGHT = 200;
-const PAD_TOP = 24;
-const PAD_BOTTOM = 28;
+const HEIGHT = 180;
+const PAD_TOP = 20;
+const PAD_BOTTOM = 24;
 const PAD_LEFT = 8;
 const PAD_RIGHT = 36;
 const PLOT_HEIGHT = HEIGHT - PAD_TOP - PAD_BOTTOM;
@@ -107,39 +107,35 @@ export default function DraggableSignalTrace({
 
   return (
     <div
-      className="rounded-lg border p-4 pb-3 bg-[#161b23]"
-      style={{ borderColor: isTopContributor ? `${color}66` : '#262c38' }}
+      className="border bg-[#111318] p-3 pb-2"
+      style={{ borderColor: isTopContributor ? color : '#1E212A' }}
     >
       <div className="flex justify-between items-baseline mb-1">
         <div className="flex items-baseline gap-2">
-          <span className="font-sans text-sm font-semibold text-slate-100">{label}</span>
+          <span className="text-xs font-mono font-semibold text-[#D7D9E0] uppercase tracking-wide">{label}</span>
           {isTopContributor && (
-            <span className="font-mono text-[10px] uppercase tracking-wide" style={{ color }}>
-              flagged signal
+            <span className="text-[9px] font-mono font-semibold uppercase tracking-wide" style={{ color }}>
+              flagged
             </span>
           )}
         </div>
         <SeverityBadge level={severity} size="sm" />
       </div>
 
-      <svg
-        ref={svgRef}
-        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-        className="w-full h-auto block touch-none"
-      >
+      <svg ref={svgRef} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full h-auto block touch-none">
         <line x1={PAD_LEFT} x2={PAD_LEFT + PLOT_WIDTH} y1={valueToY(thresholds.watch)} y2={valueToY(thresholds.watch)}
-          stroke="#F5A623" strokeOpacity={0.25} strokeDasharray="4 4" />
+          stroke="#F59E0B" strokeOpacity={0.25} strokeDasharray="3 3" />
         <line x1={PAD_LEFT} x2={PAD_LEFT + PLOT_WIDTH} y1={valueToY(thresholds.critical)} y2={valueToY(thresholds.critical)}
-          stroke="#FF5D5D" strokeOpacity={0.25} strokeDasharray="4 4" />
+          stroke="#EF4444" strokeOpacity={0.25} strokeDasharray="3 3" />
 
-        <path d={pathD} fill="none" stroke="#3D4552" strokeWidth={2} />
+        <path d={pathD} fill="none" stroke="#2A2E3A" strokeWidth={1.5} />
 
         {rehearsedValue !== null && (
           <>
             <line x1={PAD_LEFT} x2={PAD_LEFT + PLOT_WIDTH} y1={liveY} y2={liveY}
-              stroke="#6b7684" strokeOpacity={0.6} strokeDasharray="3 3" />
-            <circle cx={handleX} cy={liveY} r={4} fill="#6b7684" fillOpacity={0.6} />
-            <text x={handleX + 8} y={liveY + 3} fontFamily="'JetBrains Mono', monospace" fontSize={10} fill="#6b7684">
+              stroke="#4A4E5C" strokeOpacity={0.8} strokeDasharray="2 2" />
+            <circle cx={handleX} cy={liveY} r={3} fill="#4A4E5C" />
+            <text x={handleX + 8} y={liveY + 3} fontSize={9} fontFamily="monospace" fill="#7C8090">
               live {liveValue}
             </text>
           </>
@@ -149,13 +145,13 @@ export default function DraggableSignalTrace({
           x1={handleX - 10} x2={handleX + 10}
           animate={{ y1: displayY, y2: displayY }}
           transition={springTransition}
-          stroke={color} strokeWidth={2}
+          stroke={color} strokeWidth={1.5}
         />
         <motion.circle
           cx={handleX}
-          animate={{ cy: displayY, r: dragging ? 9 : 7 }}
+          animate={{ cy: displayY, r: dragging ? 8 : 6 }}
           transition={springTransition}
-          fill="#161b23" stroke={color} strokeWidth={2}
+          fill="#0A0B0D" stroke={color} strokeWidth={1.5}
           onPointerDown={startDragging}
           onKeyDown={handleKeyDown}
           tabIndex={0}
@@ -164,24 +160,23 @@ export default function DraggableSignalTrace({
           aria-valuemin={min}
           aria-valuemax={max}
           aria-valuenow={displayValue}
-          className="cursor-ns-resize focus:outline-none focus-visible:drop-shadow-[0_0_0_3px_rgba(79,209,197,0.5)]"
+          className="cursor-ns-resize focus:outline-none"
         />
-        <text x={handleX - 16} y={displayY - 12} textAnchor="end"
-          fontFamily="'JetBrains Mono', monospace" fontSize={12} fontWeight={600} fill={color}>
+        <text x={handleX - 16} y={displayY - 10} textAnchor="end" fontSize={11} fontFamily="monospace" fontWeight={600} fill={color}>
           {displayValue} {unit}
         </text>
       </svg>
 
-      <div className="flex justify-between items-center min-h-[20px] mt-0.5">
-        <span className="font-mono text-[11px] text-slate-500">
-          {timeline ?? 'Drag the marker, or focus it and use arrow keys, to rehearse a future reading'}
+      <div className="flex justify-between items-center min-h-[18px] mt-0.5">
+        <span className="text-[10px] font-mono text-[#4A4E5C]">
+          {timeline ?? 'drag or arrow-key the marker to rehearse'}
         </span>
         {rehearsedValue !== null && (
           <button
             onClick={reset}
-            className="font-mono text-[11px] text-slate-500 border border-[#262c38] rounded px-2 py-0.5 hover:text-slate-300 hover:border-slate-600 transition-colors"
+            className="text-[10px] font-mono text-[#7C8090] border border-[#1E212A] px-1.5 py-0.5 hover:text-[#D7D9E0] hover:border-[#2A2E3A] transition-colors"
           >
-            reset to live
+            reset
           </button>
         )}
       </div>

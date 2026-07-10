@@ -1,5 +1,13 @@
 export type SeverityLevel = 'healthy' | 'watch' | 'critical';
 
+import { MotorStatus } from './types';
+
+export function statusToSeverity(status: MotorStatus): SeverityLevel {
+  if (status === 'fault') return 'critical';
+  if (status === 'warning') return 'watch';
+  return 'healthy';
+}
+
 export interface SeverityThresholds {
   watch: number;
   critical: number;
@@ -17,9 +25,9 @@ export function getSeverity(
 }
 
 export const SEVERITY_COLORS: Record<SeverityLevel, string> = {
-  healthy: '#4FD1C5',
-  watch: '#F5A623',
-  critical: '#FF5D5D',
+  healthy: '#22C55E',
+  watch: '#F59E0B',
+  critical: '#EF4444',
 };
 
 export const SEVERITY_LABELS: Record<SeverityLevel, string> = {
