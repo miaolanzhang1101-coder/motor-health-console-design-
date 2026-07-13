@@ -50,8 +50,8 @@ export default function DesignSystemPage() {
           <DataTable
             maxHeight={90}
             columns={[
-              { key: 'a', label: 'Window', render: (r: { a: number }) => r.a },
-              { key: 'b', label: 'RMS', render: (r: { b: string }) => r.b, align: 'right' },
+              { key: 'a', label: 'Window', render: (r: { a: number; b: string }) => r.a },
+              { key: 'b', label: 'RMS', render: (r: { a: number; b: string }) => r.b, align: 'right' },
             ]}
             rows={[{ a: 0, b: '0.41' }, { a: 1, b: '0.92' }]}
           />

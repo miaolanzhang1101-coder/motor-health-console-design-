@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Button from './ui/Button';
 import RobotBodyMap from './RobotBodyMap';
 import ScenarioChart, { Scenario } from './ScenarioChart';
-import { statusToSeverity, SEVERITY_COLORS } from '../lib/severity';
+import { statusToSeverity, SEVERITY_COLORS, getSeverity } from '../lib/severity';
 import { toDeviationIndex } from '../lib/normalize';
 import { getMotorTypeLabel, getEffectiveThresholdsForMotor } from '../lib/thresholdTree';
 import { generatePeerRobots, deriveThresholdFromPeer, RobotFleet } from '../lib/multiRobot';
@@ -33,7 +33,6 @@ export default function SetupWizard({ motors, tree, onTreeChange, selectedId, on
   const [draftTree, setDraftTree] = useState<ThresholdNode>(tree);
   const [peerRobots] = useState<RobotFleet[]>(() => generatePeerRobots());
   const [selectedScenario, setSelectedScenario] = useState<string | null>(null);
-  const [popupOpen, setPopupOpen] = useState(true);
   const [windowRange, setWindowRange] = useState<'20' | '40' | 'all'>('all');
 
   const effectiveMap = computeEffectiveMap(draftTree, draftTree.override!);
@@ -72,6 +71,32 @@ export default function SetupWizard({ motors, tree, onTreeChange, selectedId, on
   const scenarioHistory = windowRange === 'all' ? fullHistory : fullHistory.slice(-Number(windowRange));
 
   const faultTier = (pct: number) => (pct > 20 ? '#EF4444' : pct > 5 ? '#F59E0B' : '#22C55E');
+
+  const liveThresholdsForSelected = selectedMotor ? getEffectiveThresholdsForMotor(tree, selectedMotor.file) : null;
+  const appliedThresholds = selectedScenario ? scenarios.find((s) => s.id === selectedScenario)?.thresholds : liveThresholdsForSelected;
+  const countCritical = (hist: number[], th: { watch: number; critical: number }) =>
+    hist.filter((v) => getSeverity(v, th) === 'critical').length;
+  const liveCriticalCount = liveThresholdsForSelected ? countCritical(fullHistory, liveThresholdsForSelected) : 0;
+  const appliedCriticalCount = appliedThresholds ? countCritical(fullHistory, appliedThresholds) : 0;
+
+  const checklistItems = selectedMotor
+    ? [
+        { id: 'current', label: 'Compared against current policy', pass: true, action: null as string | null },
+        { id: 'draft', label: 'Compared against draft policy', pass: !scenarios.some((s) => s.id === 'draft') || selectedScenario === 'draft', action: 'draft' },
+        { id: 'peer', label: 'Compared against peer baseline', pass: !scenarios.some((s) => s.id === 'peer') || selectedScenario === 'peer', action: 'peer' },
+        { id: 'spike', label: 'No critical spike vs current policy', pass: appliedCriticalCount <= liveCriticalCount, action: 'live' },
+      ]
+    : [];
+  const allChecksPass = checklistItems.every((i) => i.pass);
+
+  const applyScenario = (id: string) => {
+    setSelectedScenario(id);
+    const s = scenarios.find((sc) => sc.id === id);
+    if (s) {
+      setDraftTree((prev) => updateNodeOverride(prev, selectedId, s.thresholds));
+      onFlash([selectedId]);
+    }
+  };
 
   return (
     <div className="flex" style={{ height: 'calc(100vh - 40px)' }}>
@@ -163,11 +188,18 @@ export default function SetupWizard({ motors, tree, onTreeChange, selectedId, on
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden">
         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 relative">
-          <div className="text-[10px] font-mono text-[#4A4E5C]">
+          <EnvironmentBackground />
+          <div className="relative text-[10px] font-mono text-[#4A4E5C]">
             ‹ Threshold Policies / {selectedMotor ? selectedMotor.name : 'Select a motor'}
           </div>
 
-          {selectedMotor ? (
+          {!selectedMotor && (
+            <div className="text-[10px] font-mono text-[#4A4E5C] p-3 border border-dashed border-[#1E212A]">
+              Select a motor from the left, or click a joint on the diagram.
+            </div>
+          )}
+
+          {selectedMotor && (
             <>
               <div className="flex items-center justify-between">
                 <div>
@@ -184,6 +216,25 @@ export default function SetupWizard({ motors, tree, onTreeChange, selectedId, on
                 </Button>
               </div>
 
+              {/* Chart — full width now that checklist lives in the right panel as an interactive form */}
+              {scenarios.length > 1 ? (
+                <div className="bg-[#111318] border border-[#2A2E3A]">
+                  <div className="flex items-center justify-between px-3 py-2 border-b border-[#1E212A]">
+                    <span className="text-xs font-mono text-[#D7D9E0]">{selectedMotor.name} — Policy Comparison</span>
+                  </div>
+                  <ScenarioChart
+                    history={scenarioHistory}
+                    scenarios={scenarios}
+                    selectedId={selectedScenario}
+                    onSelect={applyScenario}
+                  />
+                </div>
+              ) : (
+                <div className="text-[10px] font-mono text-[#4A4E5C] p-3 border border-dashed border-[#1E212A]">
+                  No alternate policies to compare — nothing pending for this motor.
+                </div>
+              )}
+
               <div className="flex gap-1 border-b border-[#1E212A]">
                 {(['20', '40', 'all'] as const).map((r) => (
                   <button
@@ -197,7 +248,6 @@ export default function SetupWizard({ motors, tree, onTreeChange, selectedId, on
                 ))}
               </div>
 
-              {/* Expandable feature table, styled like the reference's resource table */}
               <div className="border border-[#1E212A]">
                 <div className="grid grid-cols-[1fr_90px_90px_90px] gap-3 px-3 py-2 border-b border-[#1E212A] text-[9px] font-mono uppercase text-[#4A4E5C]">
                   <span>Feature</span><span className="text-right">Before</span><span className="text-right">Change</span><span className="text-right">Result</span>
@@ -219,55 +269,82 @@ export default function SetupWizard({ motors, tree, onTreeChange, selectedId, on
                 ))}
               </div>
 
-              <Button variant="primary" onClick={handleDeploy} disabled={changes.length === 0}>Push Deploy</Button>
+              <Button variant="primary" onClick={handleDeploy} disabled={changes.length === 0 || !allChecksPass}>
+                Save policy
+              </Button>
+              {changes.length > 0 && !allChecksPass && (
+                <div className="text-[10px] font-mono text-[#EF4444]">Resolve the failing checklist item before deploying.</div>
+              )}
             </>
-          ) : (
-            <div className="text-[10px] font-mono text-[#4A4E5C] p-3 border border-dashed border-[#1E212A]">
-              Select a motor from the left, or click a joint on the diagram.
-            </div>
-          )}
-
-          {/* Floating popup — the scenario chart, positioned like the reference's overlay card */}
-          {popupOpen && selectedMotor && scenarios.length > 1 && (
-            <div className="absolute left-4 bottom-4 w-[440px] bg-[#111318] border border-[#2A2E3A] shadow-lg">
-              <div className="flex items-center justify-between px-3 py-2 border-b border-[#1E212A]">
-                <span className="text-xs font-mono text-[#D7D9E0]">{selectedMotor.name} — Policy Comparison</span>
-                <div className="flex items-center gap-2">
-                  <button className="text-[9px] font-mono text-[#3B82F6]">View as Page</button>
-                  <button onClick={() => setPopupOpen(false)} className="text-[#4A4E5C] hover:text-[#D7D9E0] text-xs">✕</button>
-                </div>
-              </div>
-              <ScenarioChart
-                history={scenarioHistory}
-                scenarios={scenarios}
-                selectedId={selectedScenario}
-                onSelect={(id) => {
-                  setSelectedScenario(id);
-                  const s = scenarios.find((sc) => sc.id === id);
-                  if (s) {
-                    setDraftTree((prev) => updateNodeOverride(prev, selectedId, s.thresholds));
-                    onFlash([selectedId]);
-                  }
-                }}
-              />
-            </div>
           )}
         </div>
 
-        {/* Right: body diagram standing in for the map */}
-        <div className="w-96 shrink-0 border-l border-[#1E212A] p-3 overflow-y-auto">
-          <RobotBodyMap
-            motors={motors}
-            colorMode="category"
-            selectedMotor={selectedMotor}
-            onSelectMotor={(m) => {
-              onSelectId(MOTOR_NODE_MAP[m.file] ?? 'global');
-              setPopupOpen(true);
-            }}
-            onSelectCategory={onSelectId}
-          />
+        {/* Right: window data lists + body diagram */}
+        <div className="w-96 shrink-0 border-l border-[#1E212A] overflow-y-auto flex flex-col">
+          {selectedMotor && checklistItems.length > 0 && (
+            <div className="p-3 border-b border-[#1E212A] flex flex-col gap-2">
+              <div className="text-[9px] font-mono uppercase tracking-wide text-[#4A4E5C] mb-1">Checklist</div>
+              {checklistItems.map((item) => (
+                <div key={item.id} className="flex flex-col gap-1 border border-[#1E212A] p-2">
+                  <div className="flex items-center gap-2 text-xs font-mono" style={{ color: item.pass ? '#22C55E' : '#EF4444' }}>
+                    <span>{item.pass ? '✓' : '✕'}</span>
+                    {item.label}
+                  </div>
+                  {!item.pass && item.action && (
+                    <Button size="sm" variant="primary" onClick={() => applyScenario(item.action!)}>
+                      {item.action === 'live' ? 'Revert to current policy' : `Apply ${scenarios.find((s) => s.id === item.action)?.label ?? item.action}`}
+                    </Button>
+                  )}
+                </div>
+              ))}
+              {!allChecksPass && (
+                <div className="text-[10px] font-mono text-[#EF4444] mt-1">
+                  Resolve every check before Save policy unlocks.
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="p-3">
+            <RobotBodyMap
+              motors={motors}
+              colorMode="category"
+              selectedMotor={selectedMotor}
+              onSelectMotor={(m) => onSelectId(MOTOR_NODE_MAP[m.file] ?? 'global')}
+              onSelectCategory={onSelectId}
+            />
+          </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * References a real photo at /public/environment-bg.jpg (add this file to
+ * your project yourself — it can't be embedded by generated code). Falls
+ * back to a plain dark panel with a note if the file isn't there yet, so a
+ * missing image never breaks the layout.
+ */
+function EnvironmentBackground() {
+  const [failed, setFailed] = useState(false);
+  return (
+    <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+      {!failed ? (
+        <img
+          src="/environment-bg.jpg"
+          alt=""
+          className="w-full h-full object-cover opacity-30"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center bg-[#0A0B0D]">
+          <span className="text-[10px] font-mono text-[#2A2E3A]">
+            Add an image at /public/environment-bg.jpg to show it here
+          </span>
+        </div>
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-[#0A0B0D] via-[#0A0B0D]/60 to-[#0A0B0D]/20" />
     </div>
   );
 }
