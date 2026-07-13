@@ -4,6 +4,17 @@ import Papa from 'papaparse';
 import { processMotorData } from '../lib/processData';
 import { generateSampleFleet } from '../lib/sampleData';
 import { Motor, ViewKey, ActionState } from '../lib/types';
+import {
+  DEFAULT_TREE,
+  ThresholdNode,
+  MOTOR_NODE_MAP,
+  getEffectiveThresholdsForMotor,
+  getAncestryChain,
+  findNode,
+  updateNodeOverride,
+  collectInheritingDescendants,
+  ThresholdValues,
+} from '../lib/thresholdTree';
 import Sidebar from '../components/ui/Sidebar';
 import FleetConsole from '../components/FleetConsole';
 import MotorInspector from '../components/MotorInspector';
@@ -34,6 +45,9 @@ export default function Home() {
   const [motors, setMotors] = useState<Motor[]>([]);
   const [selectedMotor, setSelectedMotor] = useState<Motor | null>(null);
   const [actions, setActions] = useState<Record<string, ActionState>>({});
+  const [thresholdTree, setThresholdTree] = useState<ThresholdNode>(DEFAULT_TREE);
+  const [selectedThresholdId, setSelectedThresholdId] = useState('global');
+  const [flashTokens, setFlashTokens] = useState<Record<string, number>>({});
   const [uploadLabel, setUploadLabel] = useState('UPLOAD CSV');
   const [isLive, setIsLive] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -78,9 +92,33 @@ export default function Home() {
   };
 
   const currentAction: ActionState = selectedMotor ? actions[selectedMotor.file] ?? 'none' : 'none';
-  const handleActionChange = (a: ActionState) => {
-    if (!selectedMotor) return;
-    setActions((prev) => ({ ...prev, [selectedMotor.file]: a }));
+  const handleActionChange = (motorFile: string, a: ActionState) => {
+    setActions((prev) => ({ ...prev, [motorFile]: a }));
+  };
+
+  const handleFlash = (ids: string[]) => {
+    setFlashTokens((prev) => {
+      const next = { ...prev };
+      ids.forEach((id) => {
+        next[id] = (next[id] ?? 0) + 1;
+      });
+      return next;
+    });
+  };
+
+  const motorThresholds = selectedMotor
+    ? getEffectiveThresholdsForMotor(thresholdTree, selectedMotor.file)
+    : { watch: 40, critical: 70 };
+
+  const selectedMotorNodeId = selectedMotor ? MOTOR_NODE_MAP[selectedMotor.file] ?? 'global' : 'global';
+  const selectedMotorNode = findNode(thresholdTree, selectedMotorNodeId);
+  const hasOwnOverride = selectedMotorNode?.override !== null && selectedMotorNode?.override !== undefined;
+  const thresholdAncestry = selectedMotor ? getAncestryChain(thresholdTree, selectedMotorNodeId) : [];
+
+  const handleThresholdOverrideChange = (nodeId: string, override: ThresholdValues | null) => {
+    setThresholdTree((prev) => updateNodeOverride(prev, nodeId, override));
+    const node = findNode(thresholdTree, nodeId);
+    if (node) handleFlash([nodeId, ...collectInheritingDescendants(node)]);
   };
 
   return (
@@ -112,12 +150,38 @@ export default function Home() {
 
         <div className="flex-1 overflow-auto">
           {view === 'fleet' && (
-            <FleetConsole motors={motors} selectedMotor={selectedMotor} onSelectMotor={handleMotorSelect} actions={actions} />
+            <FleetConsole
+              motors={motors}
+              selectedMotor={selectedMotor}
+              onSelectMotor={handleMotorSelect}
+              actions={actions}
+              onActionChange={(file, a) => handleActionChange(file, a)}
+              thresholdTree={thresholdTree}
+              onThresholdOverrideChange={handleThresholdOverrideChange}
+            />
           )}
           {view === 'inspector' && (
-            <MotorInspector motor={selectedMotor} action={currentAction} onActionChange={handleActionChange} />
+            <MotorInspector
+              motor={selectedMotor}
+              action={currentAction}
+              onActionChange={(a) => selectedMotor && handleActionChange(selectedMotor.file, a)}
+              thresholds={motorThresholds}
+              hasOwnOverride={hasOwnOverride}
+              onThresholdOverrideChange={(override) => handleThresholdOverrideChange(selectedMotorNodeId, override)}
+              thresholdAncestry={thresholdAncestry}
+            />
           )}
-          {view === 'setup' && <SetupWizard />}
+          {view === 'setup' && (
+            <SetupWizard
+              motors={motors}
+              tree={thresholdTree}
+              onTreeChange={setThresholdTree}
+              selectedId={selectedThresholdId}
+              onSelectId={setSelectedThresholdId}
+              flashTokens={flashTokens}
+              onFlash={handleFlash}
+            />
+          )}
           {view === 'ai' && <AIAnalysis motors={motors} />}
         </div>
       </div>

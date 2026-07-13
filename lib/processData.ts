@@ -1,8 +1,14 @@
-export function processMotorData(rows) {
-  const map = {};
+import { SensorWindow, Motor, MotorStatus } from './types';
+
+// Input rows come straight from Papa.parse on an arbitrary CSV, so they're
+// only loosely typed here — real-world column sets vary. Cast to
+// SensorWindow once grouped, since by then we know the shape well enough
+// for the app's purposes.
+export function processMotorData(rows: Record<string, unknown>[]): Motor[] {
+  const map: Record<string, Record<string, unknown>[]> = {};
 
   rows.forEach((r) => {
-    const key = r.file || 'unknown';
+    const key = (r.file as string) || 'unknown';
     if (!map[key]) map[key] = [];
     map[key].push(r);
   });
@@ -13,10 +19,10 @@ export function processMotorData(rows) {
       const faults = windows.filter((w) => w.label === 'fault').length;
       const faultPct = (faults / total) * 100;
 
-      const avg = (key) =>
+      const avg = (key: string) =>
         windows.reduce((s, w) => s + (Number(w[key]) || 0), 0) / total;
 
-      const status =
+      const status: MotorStatus =
         faultPct > 20 ? 'fault' : faultPct > 5 ? 'warning' : 'normal';
 
       return {
@@ -30,19 +36,19 @@ export function processMotorData(rows) {
         avgCrest: avg('crest_factor'),
         avgPeak: avg('peak'),
         status,
-        windows,
+        windows: windows as SensorWindow[],
       };
     })
     .sort((a, b) => b.faultPct - a.faultPct);
 }
 
-export function fleetMetrics(motors) {
+export function fleetMetrics(motors: Motor[]) {
   const faultN = motors.filter((m) => m.status === 'fault').length;
   const warnN = motors.filter((m) => m.status === 'warning').length;
   const okN = motors.filter((m) => m.status === 'normal').length;
   const totalW = motors.reduce((s, m) => s + m.total, 0);
   const faultW = motors.reduce((s, m) => s + m.faults, 0);
-  const avgK = motors.reduce((s, m) => s + m.avgKurt, 0) / motors.length;
+  const avgK = motors.length ? motors.reduce((s, m) => s + m.avgKurt, 0) / motors.length : 0;
 
   return {
     total: motors.length,
