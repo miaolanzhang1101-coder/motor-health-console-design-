@@ -60,7 +60,7 @@ export default function SetupWizard({ motors, tree, onTreeChange, selectedId, on
     const draftDiffers = liveThresholds.watch !== draftThresholds.watch || liveThresholds.critical !== draftThresholds.critical;
     scenarios.push({ id: 'live', label: 'Current Policy', color: '#3B82F6', thresholds: liveThresholds, note: 'What is actually live right now.', recommended: !draftDiffers });
     if (draftDiffers) {
-      scenarios.push({ id: 'draft', label: 'Draft Policy', color: '#F59E0B', thresholds: draftThresholds, note: 'Your in-progress edit, not deployed yet.', recommended: true });
+      scenarios.push({ id: 'draft', label: 'Draft Policy', color: '#818CF8', thresholds: draftThresholds, note: 'Your in-progress edit, not deployed yet.', recommended: true });
     }
     if (matchingPeer?.motor) {
       scenarios.push({ id: 'peer', label: `${matchingPeer.robot.robotName} Baseline`, color: '#A78BFA', thresholds: deriveThresholdFromPeer(matchingPeer.motor), note: `Derived from ${matchingPeer.robot.robotName}'s own healthy operating range.` });
@@ -70,7 +70,7 @@ export default function SetupWizard({ motors, tree, onTreeChange, selectedId, on
   const fullHistory = selectedMotor ? toDeviationIndex(selectedMotor.windows.map((w) => Number(w.rms) || 0)) : [];
   const scenarioHistory = windowRange === 'all' ? fullHistory : fullHistory.slice(-Number(windowRange));
 
-  const faultTier = (pct: number) => (pct > 20 ? '#EF4444' : pct > 5 ? '#F59E0B' : '#22C55E');
+  const faultTier = (pct: number) => (pct > 20 ? '#22D3EE' : pct > 5 ? '#818CF8' : '#475569');
 
   const liveThresholdsForSelected = selectedMotor ? getEffectiveThresholdsForMotor(tree, selectedMotor.file) : null;
   const appliedThresholds = selectedScenario ? scenarios.find((s) => s.id === selectedScenario)?.thresholds : liveThresholdsForSelected;
@@ -112,7 +112,7 @@ export default function SetupWizard({ motors, tree, onTreeChange, selectedId, on
           <div className="text-[10px] font-mono text-[#4A4E5C] mt-1">{motors.length}/{motors.length} actuators reporting</div>
           <div className="flex gap-1.5 mt-2">
             {motors.some((m) => statusToSeverity(m.status) === 'critical') && (
-              <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 border border-[#EF4444]/40 text-[#EF4444]">
+              <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 border border-[#22D3EE]/40 text-[#22D3EE]">
                 {motors.filter((m) => statusToSeverity(m.status) === 'critical').length} Critical
               </span>
             )}
@@ -273,7 +273,7 @@ export default function SetupWizard({ motors, tree, onTreeChange, selectedId, on
                 Save policy
               </Button>
               {changes.length > 0 && !allChecksPass && (
-                <div className="text-[10px] font-mono text-[#EF4444]">Resolve the failing checklist item before deploying.</div>
+                <div className="text-[10px] font-mono text-[#22D3EE]">Resolve the failing checklist item before deploying.</div>
               )}
             </>
           )}
@@ -286,7 +286,7 @@ export default function SetupWizard({ motors, tree, onTreeChange, selectedId, on
               <div className="text-[9px] font-mono uppercase tracking-wide text-[#4A4E5C] mb-1">Checklist</div>
               {checklistItems.map((item) => (
                 <div key={item.id} className="flex flex-col gap-1 border border-[#1E212A] p-2">
-                  <div className="flex items-center gap-2 text-xs font-mono" style={{ color: item.pass ? '#22C55E' : '#EF4444' }}>
+                  <div className="flex items-center gap-2 text-xs font-mono" style={{ color: item.pass ? '#475569' : '#22D3EE' }}>
                     <span>{item.pass ? '✓' : '✕'}</span>
                     {item.label}
                   </div>
@@ -298,7 +298,7 @@ export default function SetupWizard({ motors, tree, onTreeChange, selectedId, on
                 </div>
               ))}
               {!allChecksPass && (
-                <div className="text-[10px] font-mono text-[#EF4444] mt-1">
+                <div className="text-[10px] font-mono text-[#22D3EE] mt-1">
                   Resolve every check before Save policy unlocks.
                 </div>
               )}

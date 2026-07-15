@@ -25,8 +25,8 @@ const VARIANT_STYLES: Record<ButtonVariant, { base: string; active: string }> = 
     active: 'border-[#2A2E3A] bg-[#15171D] text-[#D7D9E0]',
   },
   danger: {
-    base: 'border-[#1E212A] text-[#7C8090] hover:border-[#EF4444] hover:text-[#EF4444]',
-    active: 'border-[#EF4444] bg-[#EF4444]/10 text-[#EF4444]',
+    base: 'border-[#1E212A] text-[#7C8090] hover:border-[#22D3EE] hover:text-[#22D3EE]',
+    active: 'border-[#22D3EE] bg-[#22D3EE]/10 text-[#22D3EE]',
   },
   ghost: {
     base: 'border-transparent text-[#7C8090] hover:text-[#D7D9E0]',

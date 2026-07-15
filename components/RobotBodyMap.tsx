@@ -105,7 +105,7 @@ export default function RobotBodyMap({
 
               {isHealthy && (
                 <g transform={`translate(${slot.x + 9}, ${slot.y - 13})`}>
-                  <circle r={6} fill="#22C55E" />
+                  <circle r={6} fill="#475569" />
                   <path d="M -2.5 0 L -0.5 2 L 3 -2.5" stroke="#0A0B0D" strokeWidth={1.4} fill="none" strokeLinecap="round" strokeLinejoin="round" />
                 </g>
               )}

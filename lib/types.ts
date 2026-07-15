@@ -26,4 +26,4 @@ export interface Motor {
 
 export type ActionState = 'none' | 'acknowledged' | 'scheduled' | 'escalated';
 
-export type ViewKey = 'fleet' | 'inspector' | 'setup' | 'ai';
+export type ViewKey = 'fleet' | 'inspector' | 'setup' | 'map' | 'builder';

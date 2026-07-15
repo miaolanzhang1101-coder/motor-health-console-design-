@@ -38,7 +38,7 @@ export default function DesignSystemPage() {
       title: 'Stat Card',
       description: 'Highlight a single KPI — used across Fleet Console and Motor Inspector headers.',
       category: 'display',
-      preview: <StatCard label="Risk Level" value="Critical" color="#EF4444" />,
+      preview: <StatCard label="Risk Level" value="Critical" color="#22D3EE" />,
     },
     {
       id: 'data-table',
@@ -96,7 +96,7 @@ export default function DesignSystemPage() {
       category: 'forms',
       preview: (
         <div className="flex gap-3 items-center">
-          <div className="w-16"><Input value={70} onChange={() => {}} type="number" color="#EF4444" /></div>
+          <div className="w-16"><Input value={70} onChange={() => {}} type="number" color="#22D3EE" /></div>
           <Checkbox checked onChange={() => {}} label="OVERRIDE" />
         </div>
       ),
@@ -109,7 +109,7 @@ export default function DesignSystemPage() {
       preview: (
         <svg viewBox="0 0 120 40" className="w-full">
           <polyline points="0,30 20,25 40,10 60,20 80,15 100,28 120,8" fill="none" stroke="#22D3EE" strokeWidth={2} />
-          <circle cx={120} cy={8} r={3} fill="#0A0B0D" stroke="#EF4444" strokeWidth={1.5} />
+          <circle cx={120} cy={8} r={3} fill="#0A0B0D" stroke="#22D3EE" strokeWidth={1.5} />
         </svg>
       ),
     },
@@ -136,7 +136,7 @@ export default function DesignSystemPage() {
       preview: (
         <svg viewBox="0 0 120 50" className="w-full">
           <rect x={20} y={15} width={70} height={22} fill="none" stroke="#3D4552" strokeWidth={1.5} />
-          <circle cx={20} cy={26} r={4} fill="#EF4444" />
+          <circle cx={20} cy={26} r={4} fill="#22D3EE" />
           <circle cx={90} cy={26} r={4} fill="#2A2E3A" />
         </svg>
       ),

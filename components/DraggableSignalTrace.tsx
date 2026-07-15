@@ -222,9 +222,9 @@ export default function DraggableSignalTrace({
         {!isZoomed && (
           <>
             <line x1={PAD_LEFT} x2={PAD_LEFT + PLOT_WIDTH} y1={valueToY(thresholds.watch)} y2={valueToY(thresholds.watch)}
-              stroke="#F59E0B" strokeOpacity={0.25} strokeDasharray="3 3" />
+              stroke="#818CF8" strokeOpacity={0.25} strokeDasharray="3 3" />
             <line x1={PAD_LEFT} x2={PAD_LEFT + PLOT_WIDTH} y1={valueToY(thresholds.critical)} y2={valueToY(thresholds.critical)}
-              stroke="#EF4444" strokeOpacity={0.25} strokeDasharray="3 3" />
+              stroke="#22D3EE" strokeOpacity={0.25} strokeDasharray="3 3" />
           </>
         )}
 
@@ -248,7 +248,7 @@ export default function DraggableSignalTrace({
               key={i}
               x1={indexToX(i)} x2={indexToX(i)}
               y1={HEIGHT - PAD_BOTTOM + 4} y2={HEIGHT - PAD_BOTTOM + 10}
-              stroke="#EF4444" strokeWidth={1.5}
+              stroke="#22D3EE" strokeWidth={1.5}
             />
           ) : null
         )}

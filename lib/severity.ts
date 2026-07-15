@@ -25,9 +25,9 @@ export function getSeverity(
 }
 
 export const SEVERITY_COLORS: Record<SeverityLevel, string> = {
-  healthy: '#22C55E',
-  watch: '#F59E0B',
-  critical: '#EF4444',
+  healthy: '#475569',
+  watch: '#818CF8',
+  critical: '#22D3EE',
 };
 
 export const SEVERITY_LABELS: Record<SeverityLevel, string> = {

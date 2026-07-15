@@ -36,8 +36,8 @@ export default function ComparisonChart({ series, range, highlightIndices, thres
       </div>
 
       <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full h-auto">
-        <line x1={PAD.left} x2={WIDTH - PAD.right} y1={yOf(thresholds.watch)} y2={yOf(thresholds.watch)} stroke="#F59E0B" strokeOpacity={0.25} strokeDasharray="3 3" />
-        <line x1={PAD.left} x2={WIDTH - PAD.right} y1={yOf(thresholds.critical)} y2={yOf(thresholds.critical)} stroke="#EF4444" strokeOpacity={0.25} strokeDasharray="3 3" />
+        <line x1={PAD.left} x2={WIDTH - PAD.right} y1={yOf(thresholds.watch)} y2={yOf(thresholds.watch)} stroke="#818CF8" strokeOpacity={0.25} strokeDasharray="3 3" />
+        <line x1={PAD.left} x2={WIDTH - PAD.right} y1={yOf(thresholds.critical)} y2={yOf(thresholds.critical)} stroke="#22D3EE" strokeOpacity={0.25} strokeDasharray="3 3" />
 
         {highlightIndices.map((i) =>
           i >= lo && i <= hi ? (

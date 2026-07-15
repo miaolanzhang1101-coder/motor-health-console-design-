@@ -116,7 +116,7 @@ export default function MotorPropertyPanel({
             baseline={baseline.watch}
             value={effective.watch}
             editable={hasOwnOverride}
-            color="#F59E0B"
+            color="#818CF8"
             onChange={(v) => onThresholdChange({ ...effective, watch: v })}
           />
           <ThresholdRow
@@ -124,7 +124,7 @@ export default function MotorPropertyPanel({
             baseline={baseline.critical}
             value={effective.critical}
             editable={hasOwnOverride}
-            color="#EF4444"
+            color="#22D3EE"
             onChange={(v) => onThresholdChange({ ...effective, critical: v })}
           />
         </div>

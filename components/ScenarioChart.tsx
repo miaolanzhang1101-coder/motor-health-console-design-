@@ -56,10 +56,6 @@ export default function ScenarioChart({ history, scenarios, selectedId, onSelect
 
   return (
     <div className="border border-[#1E212A] bg-[#111318] p-4">
-      <div className="text-[9px] font-mono uppercase tracking-wide text-[#4A4E5C] mb-2">
-        Historical trend + policy comparison (naive linear projection — not a forecast model)
-      </div>
-
       <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full h-auto">
         <defs>
           <linearGradient id="scenario-fill" x1="0" y1="0" x2="0" y2="1">
@@ -116,7 +112,7 @@ export default function ScenarioChart({ history, scenarios, selectedId, onSelect
               <div className="flex items-center gap-2">
                 <span className="text-xs font-mono font-semibold text-[#D7D9E0]">{s.label}</span>
                 {s.recommended && (
-                  <span className="text-[8px] font-mono uppercase text-[#22C55E] border border-[#22C55E]/40 px-1.5 py-0.5">
+                  <span className="text-[8px] font-mono uppercase text-[#475569] border border-[#475569]/40 px-1.5 py-0.5">
                     Recommended
                   </span>
                 )}

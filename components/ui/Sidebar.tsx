@@ -9,8 +9,9 @@ interface SidebarProps {
 const NAV_ITEMS: { key: ViewKey; label: string; icon: string }[] = [
   { key: 'fleet', label: 'Fleet', icon: '▤' },
   { key: 'inspector', label: 'Inspector', icon: '◎' },
-  { key: 'ai', label: 'Analysis', icon: '▲' },
   { key: 'setup', label: 'Setup', icon: '⚙' },
+  { key: 'map', label: 'Fleet Map', icon: '⬡' },
+  { key: 'builder', label: 'Builder', icon: '⊞' },
 ];
 
 export default function Sidebar({ view, onNavigate }: SidebarProps) {

@@ -2,7 +2,6 @@
 import { useState, useRef, useEffect, ChangeEvent } from 'react';
 import Papa from 'papaparse';
 import { processMotorData } from '../lib/processData';
-import { generateSampleFleet } from '../lib/sampleData';
 import { Motor, ViewKey, ActionState } from '../lib/types';
 import {
   DEFAULT_TREE,
@@ -19,14 +18,16 @@ import Sidebar from '../components/ui/Sidebar';
 import FleetConsole from '../components/FleetConsole';
 import MotorInspector from '../components/MotorInspector';
 import SetupWizard from '../components/SetupWizard';
-import AIAnalysis from '../components/AIAnalysis';
+import FleetMapDemo from '../components/FleetMapDemo';
+import InspectionBuilder from '../components/InspectionBuilder';
 
-const VIEWS: ViewKey[] = ['fleet', 'inspector', 'ai', 'setup'];
+const VIEWS: ViewKey[] = ['fleet', 'inspector', 'setup', 'map', 'builder'];
 const VIEW_LABELS: Record<ViewKey, string> = {
   fleet: 'FLEET CONSOLE',
   inspector: 'MOTOR INSPECTOR',
   setup: 'SETUP WIZARD',
-  ai: 'AI ANALYSIS',
+  map: 'FLEET MAP',
+  builder: 'INSPECTION BUILDER',
 };
 
 function useClock() {
@@ -50,15 +51,43 @@ export default function Home() {
   const [flashTokens, setFlashTokens] = useState<Record<string, number>>({});
   const [uploadLabel, setUploadLabel] = useState('UPLOAD CSV');
   const [isLive, setIsLive] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const clock = useClock();
 
-  const handleLoadSample = () => {
-    const processed = generateSampleFleet();
-    setMotors(processed);
-    setActions({});
-    setIsLive(true);
-    setUploadLabel('SAMPLE_FLEET.CSV');
+  useEffect(() => {
+    if (!isStreaming || !selectedMotor) return;
+    const id = setInterval(async () => {
+      try {
+        const res = await fetch('/api/motors/next-window', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ motor: selectedMotor }),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        setMotors((prev) => prev.map((m) => (m.file === data.motor.file ? data.motor : m)));
+        setSelectedMotor(data.motor);
+      } catch {
+        // silently skip on network failure
+      }
+    }, 2500);
+    return () => clearInterval(id);
+  }, [isStreaming, selectedMotor?.file]);
+
+  const handleLoadSample = async () => {
+    setUploadLabel('LOADING…');
+    try {
+      const res = await fetch('/api/motors');
+      if (!res.ok) throw new Error('Request failed');
+      const data = await res.json();
+      setMotors(data.motors);
+      setActions({});
+      setIsLive(true);
+      setUploadLabel('SAMPLE_FLEET.CSV');
+    } catch {
+      setUploadLabel('LOAD ERROR');
+    }
   };
 
   useEffect(() => {
@@ -136,6 +165,19 @@ export default function Home() {
             >
               Reload sample
             </button>
+            <button
+              onClick={() => setIsStreaming((s) => !s)}
+              disabled={!selectedMotor}
+              className="text-[10px] font-mono uppercase px-2.5 py-1 border transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              style={{
+                borderColor: isStreaming ? '#475569' : '#1E212A',
+                color: isStreaming ? '#475569' : '#7C8090',
+                background: isStreaming ? '#47556914' : 'transparent',
+              }}
+              title={selectedMotor ? undefined : 'Select a motor to enable live streaming'}
+            >
+              {isStreaming ? '● Live stream on' : 'Live stream'}
+            </button>
             <label className="text-[10px] font-mono uppercase text-[#7C8090] border border-[#1E212A] px-2.5 py-1 cursor-pointer hover:border-[#2A2E3A] hover:text-[#D7D9E0] transition-colors">
               <input ref={fileRef} type="file" accept=".csv" onChange={handleCSV} className="hidden" />
               {uploadLabel}
@@ -143,7 +185,7 @@ export default function Home() {
             <span className="text-[10px] font-mono text-[#4A4E5C] tabular-nums">{clock}</span>
             <span
               className="h-1.5 w-1.5 rounded-full"
-              style={{ background: isLive ? '#22C55E' : '#2A2E3A' }}
+              style={{ background: isLive ? '#475569' : '#2A2E3A' }}
             />
           </div>
         </div>
@@ -158,6 +200,7 @@ export default function Home() {
               onActionChange={(file, a) => handleActionChange(file, a)}
               thresholdTree={thresholdTree}
               onThresholdOverrideChange={handleThresholdOverrideChange}
+              isStreaming={isStreaming}
             />
           )}
           {view === 'inspector' && (
@@ -182,7 +225,8 @@ export default function Home() {
               onFlash={handleFlash}
             />
           )}
-          {view === 'ai' && <AIAnalysis motors={motors} />}
+          {view === 'map' && <FleetMapDemo />}
+          {view === 'builder' && <InspectionBuilder />}
         </div>
       </div>
     </div>

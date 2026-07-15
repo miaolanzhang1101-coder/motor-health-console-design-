@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import ComparisonChart from './ComparisonChart';
 import DraggableSignalTrace from './DraggableSignalTrace';
+import MultimodalPanel from './MultimodalPanel';
 import RangeSlider from './ui/RangeSlider';
 import Button from './ui/Button';
 import StatCard from './ui/StatCard';
@@ -104,6 +105,8 @@ export default function MotorInspector({
         <StatCard label="Highlighted" value={highlighted.length} color="#3B82F6" />
       </div>
 
+      <MultimodalPanel motor={motor} />
+
       <div className="flex gap-2">
         <Button variant="primary" active={action === 'acknowledged'} onClick={() => onActionChange('acknowledged')}>
           Acknowledge
@@ -152,7 +155,7 @@ export default function MotorInspector({
                 <span className="flex items-center gap-2">
                   <span
                     className="w-1.5 h-1.5 rounded-full"
-                    style={{ background: w.label === 'fault' ? '#EF4444' : '#2A2E3A' }}
+                    style={{ background: w.label === 'fault' ? '#22D3EE' : '#2A2E3A' }}
                   />
                   <span className="text-xs font-mono text-[#D7D9E0]">Window {i}</span>
                 </span>
@@ -220,8 +223,8 @@ export default function MotorInspector({
                     transition={reduceMotion ? { duration: 0 } : { duration: 0.2 }}
                     className="overflow-hidden"
                   >
-                    <div className="flex items-center justify-between gap-3 border border-[#EF4444]/40 bg-[#EF4444]/10 px-3 py-2">
-                      <span className="text-[10px] font-mono text-[#EF4444]">
+                    <div className="flex items-center justify-between gap-3 border border-[#22D3EE]/40 bg-[#22D3EE]/10 px-3 py-2">
+                      <span className="text-[10px] font-mono text-[#22D3EE]">
                         REHEARSAL SHOWS CRITICAL — schedule an inspection before this drift becomes real?
                       </span>
                       <Button variant="danger" size="sm" onClick={() => onActionChange('scheduled')}>

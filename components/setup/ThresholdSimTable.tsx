@@ -45,7 +45,7 @@ export default function ThresholdSimTable({ node, baseline, effective, affectedC
         baseline={isRoot ? effective.watch : baseline.watch}
         editable={hasOverride}
         value={effective.watch}
-        color="#F59E0B"
+        color="#818CF8"
         onChange={(v) => onChange({ ...effective, watch: v })}
       />
       <SimRow
@@ -53,7 +53,7 @@ export default function ThresholdSimTable({ node, baseline, effective, affectedC
         baseline={isRoot ? effective.critical : baseline.critical}
         editable={hasOverride}
         value={effective.critical}
-        color="#EF4444"
+        color="#22D3EE"
         onChange={(v) => onChange({ ...effective, critical: v })}
       />
 
