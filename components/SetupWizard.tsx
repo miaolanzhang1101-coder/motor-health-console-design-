@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Button from './ui/Button';
 import RobotBodyMap from './RobotBodyMap';
 import ScenarioChart, { Scenario } from './ScenarioChart';
+import ComparisonChart from './ComparisonChart';
 import { statusToSeverity, SEVERITY_COLORS, getSeverity } from '../lib/severity';
 import { toDeviationIndex } from '../lib/normalize';
 import { getMotorTypeLabel, getEffectiveThresholdsForMotor } from '../lib/thresholdTree';
@@ -52,6 +53,13 @@ export default function SetupWizard({ motors, tree, onTreeChange, selectedId, on
         .map((r) => ({ robot: r, motor: r.motors.find((m) => m.file === selectedMotor.file) }))
         .find((x) => x.motor)
     : null;
+
+  // All peer motors at the same joint position — used for dimension comparison.
+  const peerMotors = selectedMotor
+    ? peerRobots
+        .map((r) => r.motors.find((m) => m.file === selectedMotor.file))
+        .filter((m): m is Motor => !!m)
+    : [];
 
   const scenarios: Scenario[] = [];
   if (selectedMotor) {
@@ -247,6 +255,10 @@ export default function SetupWizard({ motors, tree, onTreeChange, selectedId, on
                   </button>
                 ))}
               </div>
+
+              {peerMotors.length > 0 && (
+                <ComparisonChart dimensions={{ primary: selectedMotor, peers: peerMotors }} />
+              )}
 
               <div className="border border-[#1E212A]">
                 <div className="grid grid-cols-[1fr_90px_90px_90px] gap-3 px-3 py-2 border-b border-[#1E212A] text-[9px] font-mono uppercase text-[#4A4E5C]">

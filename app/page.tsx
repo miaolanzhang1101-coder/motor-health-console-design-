@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useEffect, ChangeEvent } from 'react';
+import { useState, useRef, useEffect, ChangeEvent, useMemo } from 'react';
 import Papa from 'papaparse';
 import { processMotorData } from '../lib/processData';
 import { Motor, ViewKey, ActionState } from '../lib/types';
@@ -15,17 +15,16 @@ import {
   ThresholdValues,
 } from '../lib/thresholdTree';
 import Sidebar from '../components/ui/Sidebar';
-import FleetConsole from '../components/FleetConsole';
-import MotorInspector from '../components/MotorInspector';
+import FleetDashboard from '../components/FleetDashboard';
+import CellConsole from '../components/CellConsole';
 import SetupWizard from '../components/SetupWizard';
-import FleetMapDemo from '../components/FleetMapDemo';
 import InspectionBuilder from '../components/InspectionBuilder';
+import { RobotCell, Job, cellFromMotor, CellMode } from '../lib/cells';
 
-const VIEWS: ViewKey[] = ['fleet', 'inspector', 'setup', 'map', 'builder'];
 const VIEW_LABELS: Record<ViewKey, string> = {
-  fleet: 'FLEET CONSOLE',
-  inspector: 'MOTOR INSPECTOR',
-  setup: 'SETUP WIZARD',
+  fleet: 'FLEET DASHBOARD',
+  inspector: 'CELL CONSOLE',
+  setup: 'POLICY EDITOR',
   map: 'FLEET MAP',
   builder: 'INSPECTION BUILDER',
 };
@@ -41,39 +40,60 @@ function useClock() {
   return time;
 }
 
+let jobCounter = 0;
+
 export default function Home() {
   const [view, setView] = useState<ViewKey>('fleet');
   const [motors, setMotors] = useState<Motor[]>([]);
-  const [selectedMotor, setSelectedMotor] = useState<Motor | null>(null);
-  const [actions, setActions] = useState<Record<string, ActionState>>({});
+  const [selectedCellId, setSelectedCellId] = useState<string | null>(null);
+  const [cellModeOverrides, setCellModeOverrides] = useState<Record<string, CellMode>>({});
+  const [cellStatusOverrides, setCellStatusOverrides] = useState<Record<string, string>>({});
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [thresholdTree, setThresholdTree] = useState<ThresholdNode>(DEFAULT_TREE);
   const [selectedThresholdId, setSelectedThresholdId] = useState('global');
   const [flashTokens, setFlashTokens] = useState<Record<string, number>>({});
   const [uploadLabel, setUploadLabel] = useState('UPLOAD CSV');
   const [isLive, setIsLive] = useState(false);
-  const [isStreaming, setIsStreaming] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const clock = useClock();
 
+  const cells = useMemo(() => {
+    return motors.map((m, i) => {
+      const base = cellFromMotor(m, i);
+      const overrideMode = cellModeOverrides[base.id];
+      const overrideStatus = cellStatusOverrides[base.id] as typeof base.status | undefined;
+      return {
+        ...base,
+        ...(overrideMode ? { mode: overrideMode } : {}),
+        ...(overrideStatus ? { status: overrideStatus } : {}),
+      };
+    });
+  }, [motors, cellModeOverrides, cellStatusOverrides]);
+
+  const selectedCell = cells.find((c) => c.id === selectedCellId) ?? null;
+
+  // Simulate job progression
   useEffect(() => {
-    if (!isStreaming || !selectedMotor) return;
-    const id = setInterval(async () => {
-      try {
-        const res = await fetch('/api/motors/next-window', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ motor: selectedMotor }),
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        setMotors((prev) => prev.map((m) => (m.file === data.motor.file ? data.motor : m)));
-        setSelectedMotor(data.motor);
-      } catch {
-        // silently skip on network failure
-      }
-    }, 2500);
+    const id = setInterval(() => {
+      setJobs((prev) => {
+        const next = [...prev];
+        const runningIdx = next.findIndex((j) => j.status === 'running');
+        const queuedIdx = next.findIndex((j) => j.status === 'queued');
+        if (runningIdx !== -1) {
+          const running = next[runningIdx];
+          if (running.startedAt && Date.now() - running.startedAt > 8000) {
+            next[runningIdx] = { ...running, status: 'done', completedAt: Date.now() };
+          }
+        }
+        const stillRunning = next.some((j) => j.status === 'running');
+        if (!stillRunning && queuedIdx !== -1) {
+          next[queuedIdx] = { ...next[queuedIdx], status: 'running', startedAt: Date.now() };
+        }
+        return next;
+      });
+    }, 1000);
     return () => clearInterval(id);
-  }, [isStreaming, selectedMotor?.file]);
+  }, []);
 
   const handleLoadSample = async () => {
     setUploadLabel('LOADING…');
@@ -82,7 +102,6 @@ export default function Home() {
       if (!res.ok) throw new Error('Request failed');
       const data = await res.json();
       setMotors(data.motors);
-      setActions({});
       setIsLive(true);
       setUploadLabel('SAMPLE_FLEET.CSV');
     } catch {
@@ -99,15 +118,12 @@ export default function Home() {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadLabel('PARSING…');
-
     Papa.parse<Record<string, unknown>>(file, {
       header: true,
       dynamicTyping: true,
       skipEmptyLines: true,
       complete: (r) => {
-        const processed = processMotorData(r.data);
-        setMotors(processed);
-        setActions({});
+        setMotors(processMotorData(r.data));
         setIsLive(true);
         setUploadLabel(file.name.slice(0, 24).toUpperCase());
       },
@@ -115,68 +131,46 @@ export default function Home() {
     });
   };
 
-  const handleMotorSelect = (motor: Motor) => {
-    setSelectedMotor(motor);
+  const openCell = (cell: RobotCell) => {
+    setSelectedCellId(cell.id);
     setView('inspector');
   };
 
-  const currentAction: ActionState = selectedMotor ? actions[selectedMotor.file] ?? 'none' : 'none';
-  const handleActionChange = (motorFile: string, a: ActionState) => {
-    setActions((prev) => ({ ...prev, [motorFile]: a }));
+  const sendJob = (partial: Omit<Job, 'id' | 'status' | 'createdAt'>) => {
+    setJobs((prev) => [
+      ...prev,
+      { ...partial, id: `job-${++jobCounter}`, status: 'queued', createdAt: Date.now() },
+    ]);
   };
+
+  const cancelJob = (jobId: string) => setJobs((prev) => prev.filter((j) => j.id !== jobId));
 
   const handleFlash = (ids: string[]) => {
     setFlashTokens((prev) => {
       const next = { ...prev };
-      ids.forEach((id) => {
-        next[id] = (next[id] ?? 0) + 1;
-      });
+      ids.forEach((id) => { next[id] = (next[id] ?? 0) + 1; });
       return next;
     });
   };
 
-  const motorThresholds = selectedMotor
-    ? getEffectiveThresholdsForMotor(thresholdTree, selectedMotor.file)
+  const selectedMotorFile = selectedCell?.motor.file;
+  const cellThresholds = selectedMotorFile
+    ? getEffectiveThresholdsForMotor(thresholdTree, selectedMotorFile)
     : { watch: 40, critical: 70 };
-
-  const selectedMotorNodeId = selectedMotor ? MOTOR_NODE_MAP[selectedMotor.file] ?? 'global' : 'global';
-  const selectedMotorNode = findNode(thresholdTree, selectedMotorNodeId);
-  const hasOwnOverride = selectedMotorNode?.override !== null && selectedMotorNode?.override !== undefined;
-  const thresholdAncestry = selectedMotor ? getAncestryChain(thresholdTree, selectedMotorNodeId) : [];
-
-  const handleThresholdOverrideChange = (nodeId: string, override: ThresholdValues | null) => {
-    setThresholdTree((prev) => updateNodeOverride(prev, nodeId, override));
-    const node = findNode(thresholdTree, nodeId);
-    if (node) handleFlash([nodeId, ...collectInheritingDescendants(node)]);
-  };
 
   return (
     <div className="flex h-screen bg-[#0A0B0D] text-[#D7D9E0] font-sans">
       <Sidebar view={view} onNavigate={setView} />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="h-10 flex items-center justify-between border-b border-[#1E212A] bg-[#0D0F13] px-4 shrink-0">
+        <div className="h-10 flex items-center justify-between border-b border-[#1E212A] bg-[#0D0F13] px-4 shrink-0 z-10">
           <span className="text-[11px] font-mono tracking-wide text-[#7C8090]">{VIEW_LABELS[view]}</span>
-
           <div className="flex items-center gap-3">
             <button
               onClick={handleLoadSample}
               className="text-[10px] font-mono uppercase text-[#7C8090] border border-[#1E212A] px-2.5 py-1 hover:border-[#2A2E3A] hover:text-[#D7D9E0] transition-colors"
             >
               Reload sample
-            </button>
-            <button
-              onClick={() => setIsStreaming((s) => !s)}
-              disabled={!selectedMotor}
-              className="text-[10px] font-mono uppercase px-2.5 py-1 border transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-              style={{
-                borderColor: isStreaming ? '#475569' : '#1E212A',
-                color: isStreaming ? '#475569' : '#7C8090',
-                background: isStreaming ? '#47556914' : 'transparent',
-              }}
-              title={selectedMotor ? undefined : 'Select a motor to enable live streaming'}
-            >
-              {isStreaming ? '● Live stream on' : 'Live stream'}
             </button>
             <label className="text-[10px] font-mono uppercase text-[#7C8090] border border-[#1E212A] px-2.5 py-1 cursor-pointer hover:border-[#2A2E3A] hover:text-[#D7D9E0] transition-colors">
               <input ref={fileRef} type="file" accept=".csv" onChange={handleCSV} className="hidden" />
@@ -185,34 +179,44 @@ export default function Home() {
             <span className="text-[10px] font-mono text-[#4A4E5C] tabular-nums">{clock}</span>
             <span
               className="h-1.5 w-1.5 rounded-full"
-              style={{ background: isLive ? '#475569' : '#2A2E3A' }}
+              style={{ background: isLive ? '#3B82F6' : '#2A2E3A' }}
             />
           </div>
         </div>
 
         <div className="flex-1 overflow-auto">
           {view === 'fleet' && (
-            <FleetConsole
+            <FleetDashboard
               motors={motors}
-              selectedMotor={selectedMotor}
-              onSelectMotor={handleMotorSelect}
-              actions={actions}
-              onActionChange={(file, a) => handleActionChange(file, a)}
-              thresholdTree={thresholdTree}
-              onThresholdOverrideChange={handleThresholdOverrideChange}
-              isStreaming={isStreaming}
+              onOpenCell={openCell}
+              jobs={jobs}
+              onSendJob={sendJob}
+              onCancelJob={cancelJob}
             />
           )}
-          {view === 'inspector' && (
-            <MotorInspector
-              motor={selectedMotor}
-              action={currentAction}
-              onActionChange={(a) => selectedMotor && handleActionChange(selectedMotor.file, a)}
-              thresholds={motorThresholds}
-              hasOwnOverride={hasOwnOverride}
-              onThresholdOverrideChange={(override) => handleThresholdOverrideChange(selectedMotorNodeId, override)}
-              thresholdAncestry={thresholdAncestry}
+          {view === 'inspector' && selectedCell && (
+            <CellConsole
+              cell={selectedCell}
+              allCells={cells}
+              jobs={jobs}
+              onModeChange={(mode) =>
+                setCellModeOverrides((prev) => ({ ...prev, [selectedCell.id]: mode }))
+              }
+              onStatusChange={(status) =>
+                setCellStatusOverrides((prev) => ({ ...prev, [selectedCell.id]: status }))
+              }
+              onSendJob={sendJob}
+              onOpenCell={openCell}
+              thresholds={cellThresholds}
+              onMotorUpdate={(m) => {
+                setMotors((prev) => prev.map((p) => (p.file === m.file ? m : p)));
+              }}
             />
+          )}
+          {view === 'inspector' && !selectedCell && (
+            <div className="p-8 text-[10px] font-mono text-[#4A4E5C]">
+              Select a cell from the Fleet Dashboard to open its console.
+            </div>
           )}
           {view === 'setup' && (
             <SetupWizard
@@ -225,7 +229,6 @@ export default function Home() {
               onFlash={handleFlash}
             />
           )}
-          {view === 'map' && <FleetMapDemo />}
           {view === 'builder' && <InspectionBuilder />}
         </div>
       </div>
