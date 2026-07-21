@@ -245,7 +245,7 @@ function TopBar({ cell, alert, onModeChange, rmsTrace }: {
         <span className="text-[11px] text-[#8B8B96] truncate">{cell.location}</span>
       </div>
 
-      <Chip label={alert ? 'Assistance required' : 'Nominal'} tone={alert ? 'blue' : 'green'} pulse={alert} />
+      <Chip label={alert ? 'Assistance required' : 'Nominal'} tone={alert ? 'blue' : 'blue'} pulse={alert} />
 
       <div className="flex-1" />
 

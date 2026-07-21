@@ -10,13 +10,14 @@ import { motion, useReducedMotion } from 'framer-motion';
  * square. No ornament: if a mark is on screen it is carrying information.
  */
 
-export type Tone = 'neutral' | 'white' | 'blue' | 'red';
+export type Tone = 'neutral' | 'white' | 'blue' | 'green' | 'red';
 
 export const TONE: Record<Tone, string> = {
-  neutral: '#8B8B96',
-  white:   '#FFFFFF',
-  blue:  '#4DB8FF',
-  red:     '#FF5A5A',
+  neutral: '#FFFFFF',
+  white: '#FFFFFF',
+  blue: '#3B82F6',
+  green: '#22C55E',
+  red: '#EF4444',
 };
 
 // Back-compat aliases for existing call sites

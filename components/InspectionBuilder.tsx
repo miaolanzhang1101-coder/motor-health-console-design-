@@ -145,7 +145,7 @@ export default function InspectionBuilder() {
                 <span className="text-[9px] text-[#8B8B96]">☆</span>
                 <button
                   onClick={() => addBlock(def)}
-                  aria-label={`Add ${def.label} to routine`}
+                  aria-label={`Add ${def.name} to routine`}
                   className="w-6 h-6 flex items-center justify-center border border-[#26262F] text-[#A0A0AB] hover:border-[#4DB8FF] hover:text-[#4DB8FF] transition-colors text-xs"
                 >
                   +
@@ -209,7 +209,7 @@ export default function InspectionBuilder() {
                   </AnimatePresence>
                   <button
                     onClick={() => setEditingId(block.instanceId)}
-                    aria-label={`Edit parameters for ${block.label}`}
+                    aria-label={`Edit parameters for ${block.definitionId}`}
                     className="w-6 h-6 flex items-center justify-center border border-[#26262F] text-[#A0A0AB] hover:border-[#4DB8FF] hover:text-[#4DB8FF] transition-colors text-xs"
                     title="Edit parameters"
                   >
@@ -217,7 +217,7 @@ export default function InspectionBuilder() {
                   </button>
                   <button
                     onClick={() => removeBlock(block.instanceId)}
-                    aria-label={`Remove ${block.label} from routine`}
+                    aria-label={`Remove ${block.definitionId} from routine`}
                     className="w-6 h-6 flex items-center justify-center border border-[#26262F] text-[#A0A0AB] hover:border-[#FF5A5A] hover:text-[#FF5A5A] transition-colors text-xs"
                     title="Remove"
                   >
