@@ -1,68 +1,79 @@
 @import "tailwindcss";
 
 @theme {
-  /* Semantic color tokens — use these instead of hex everywhere */
-  --color-bg: #0D0F12;
-  --color-bg-elevated: #14171C;
-  --color-bg-inset: #0A0C0F;
-  --color-border: #1E232B;
-  --color-border-strong: #2A303B;
+  /* Surfaces — near-absolute black, separated by luminance alone */
+  --color-bg:          #000000;
+  --color-surface:     #08080B;
+  --color-surface-2:   #0D0D11;
+  --color-surface-3:   #131318;
 
-  --color-text: #E5E7EB;
-  --color-text-muted: #9CA3AF;
-  --color-text-subtle: #6B7280;
-  --color-text-faint: #4B5563;
+  /* Lines */
+  --color-line:        #1A1A21;
+  --color-line-2:      #26262F;
+  --color-line-soft:   #131318;
 
-  /* Semantic status — colors only used to communicate meaning */
-  --color-safe: #10B981;       /* emerald — running/optimal/verified */
-  --color-safe-tint: rgba(16, 185, 129, 0.12);
-  --color-warn: #F59E0B;       /* amber — human intervention needed */
-  --color-warn-tint: rgba(245, 158, 11, 0.12);
-  --color-danger: #EF4444;     /* crimson — E-stop and structural failure only */
-  --color-danger-tint: rgba(239, 68, 68, 0.12);
-  --color-accent: #60A5FA;     /* blue — interactive/selectable non-status */
-  --color-accent-tint: rgba(96, 165, 250, 0.12);
+  /* Text — every value below clears WCAG AA (4.5:1) on black.
+     The former #45454E sat at 2.21:1 and #6A6A75 at 3.93:1; both were
+     carrying body copy, so both were raised. */
+  --color-fg:          #FFFFFF;  /* 21.0:1 */
+  --color-fg-2:        #A0A0AB;  /*  8.1:1 */
+  --color-fg-3:        #8B8B96;  /*  6.2:1 */
+  --color-fg-4:        #757580;  /*  4.6:1 */
+
+  /* Light blue carries every interactive and active state */
+  --color-blue:        #4DB8FF;  /*  9.6:1 */
+  --color-blue-2:      #A5DEFF;  /* 14.5:1 */
+  --color-blue-dim:    #1E5E8C;
+
+  /* Red is the only other hue, reserved for a genuine fault */
+  --color-red:         #FF5A5A;  /*  6.6:1 */
 
   --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-mono), ui-monospace, 'JetBrains Mono', monospace;
+  --font-mono: var(--font-mono), ui-monospace, monospace;
 }
 
 html, body {
-  background: var(--color-bg);
-  color: var(--color-text);
+  background: #000000;
+  color: #FFFFFF;
   font-family: var(--font-sans);
-  font-feature-settings: 'ss01', 'cv01';
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Monospace utility */
-.font-mono, code, pre, kbd {
-  font-family: var(--font-mono);
-  font-feature-settings: 'zero', 'ss01';
-}
+/* Nothing is rounded. */
+*, *::before, *::after { border-radius: 0 !important; }
 
-/* Numeric tabular figures — never let telemetry jitter */
-.tabular-nums {
+.tabular-nums, .font-mono {
   font-variant-numeric: tabular-nums;
-  font-feature-settings: 'tnum';
+  font-feature-settings: 'tnum', 'zero';
 }
+.font-mono { font-family: var(--font-mono); }
 
-/* Subtle scrollbar — futuristic dashboards don't have chunky scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb {
-  background: #2A303B;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover { background: #3B4252; }
+::-webkit-scrollbar-thumb { background: #26262F; }
+::-webkit-scrollbar-thumb:hover { background: #4DB8FF; }
 
-/* Selection color that matches the accent */
-::selection { background: rgba(96, 165, 250, 0.3); color: #F3F4F6; }
+::selection { background: rgba(77, 184, 255, 0.35); color: #FFFFFF; }
 
-/* Focus rings — accent-tinted, always visible */
+/* Focus is never removed, only restyled. 2px so it reads over dense chrome. */
 :focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid #4DB8FF;
   outline-offset: 2px;
+}
+/* SVG nodes take a stroke-based ring instead, since outline is unreliable there */
+g[role="button"]:focus-visible { outline: none; }
+g[role="button"]:focus-visible rect[data-node] {
+  stroke: #A5DEFF;
+  stroke-width: 0.4;
+}
+
+.row-hover { transition: background 110ms linear; }
+.row-hover:hover { background: rgba(77, 184, 255, 0.07); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

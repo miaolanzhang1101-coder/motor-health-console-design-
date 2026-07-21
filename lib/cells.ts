@@ -33,12 +33,12 @@ export interface Job {
 }
 
 export const CELL_STATUS_COLORS: Record<CellStatus, string> = {
-  running: '#10B981',              // emerald — safe/running
-  idle: '#6B7280',                 // slate — quiet, no motion
-  paused: '#60A5FA',               // blue — attention but not intervention
-  'assistance-required': '#F59E0B', // amber — human help needed
-  error: '#EF4444',                // crimson — reserved for structural failures
-  offline: '#2A303B',              // deep slate — no signal
+  running: '#FFFFFF',               // white — nominal, under autonomy
+  idle: '#45454E',                  // grey — powered, no task
+  paused: '#A855F7',                // purple — held, operator attention
+  'assistance-required': '#FF3B3B', // red — halted, human required
+  error: '#FF3B3B',                 // red — structural fault
+  offline: '#26262F',               // near-line — no signal
 };
 
 export const CELL_STATUS_LABELS: Record<CellStatus, string> = {
@@ -75,13 +75,12 @@ export const JOB_PRIORITY_COLORS: Record<JobPriority, string> = {
 // so a motor in trouble surfaces as a cell in trouble — the two data models
 // stay linked rather than diverging.
 export function cellFromMotor(motor: Motor, index: number): RobotCell {
-  // Cells start in whatever state their vibration stats warrant; the
-  // 4-step workflow begins with normal operation. The "assistance"
-  // state is reached by clicking Simulate anomaly on any cell, which
-  // mirrors the real trigger: a vision-system confidence drop.
-  const severity: CellStatus =
-    motor.faultPct > 20 ? 'error' :
-    motor.faultPct > 5 ? 'paused' : 'running';
+  // Every cell loads nominal. Fault state is never derived from the
+  // historical vibration record at mount time — if it were, the fleet
+  // map would show red before the operator had dispatched anything,
+  // which inverts the narrative. Faults arrive only from a live job.
+  const severity: CellStatus = index % 4 === 3 ? 'idle' : 'running';
+
   const grid = [
     { x: 20, y: 25 }, { x: 45, y: 20 }, { x: 68, y: 30 },
     { x: 30, y: 55 }, { x: 55, y: 60 }, { x: 78, y: 55 },
@@ -93,10 +92,10 @@ export function cellFromMotor(motor: Motor, index: number): RobotCell {
     name: `Cell ${cellNumber}`,
     location: index < 3 ? 'Line A' : index < 6 ? 'Line B' : 'Line C',
     status: severity,
-    mode: severity === 'error' ? 'stopped' : 'autonomous',
+    mode: severity === 'idle' ? 'stopped' : 'autonomous',
     battery: 55 + ((index * 7) % 45),
-    utilizationPct: severity === 'error' ? 0 : Math.round(60 + Math.random() * 35),
-    currentTask: severity === 'error' ? null : ['inspect', 'pick-place', 'calibrate'][index % 3],
+    utilizationPct: severity === 'idle' ? 0 : Math.round(60 + Math.random() * 35),
+    currentTask: severity === 'idle' ? null : ['inspect', 'pick-place', 'calibrate'][index % 3],
     motor,
     positionOnMap: grid[index % grid.length],
   };

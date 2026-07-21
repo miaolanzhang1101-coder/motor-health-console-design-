@@ -13,9 +13,9 @@ interface HoldToConfirmProps {
 }
 
 const INTENT: Record<NonNullable<HoldToConfirmProps['intent']>, { fg: string; bg: string; ring: string; glow: string }> = {
-  safe:   { fg: '#10B981', bg: 'rgba(16, 185, 129, 0.12)', ring: '#10B981', glow: 'rgba(16, 185, 129, 0.35)' },
-  warn:   { fg: '#F59E0B', bg: 'rgba(245, 158, 11, 0.12)', ring: '#F59E0B', glow: 'rgba(245, 158, 11, 0.35)' },
-  danger: { fg: '#EF4444', bg: 'rgba(239, 68, 68, 0.12)', ring: '#EF4444', glow: 'rgba(239, 68, 68, 0.35)' },
+  safe:   { fg: '#FFFFFF', bg: 'rgba(110, 231, 168, 0.10)', ring: '#FFFFFF', glow: 'rgba(110, 231, 168, 0.22)' },
+  warn:   { fg: '#4DB8FF', bg: 'rgba(232, 179, 102, 0.10)', ring: '#4DB8FF', glow: 'rgba(232, 179, 102, 0.22)' },
+  danger: { fg: '#FF5A5A', bg: 'rgba(232, 125, 125, 0.10)', ring: '#FF5A5A', glow: 'rgba(232, 125, 125, 0.22)' },
 };
 
 /**
@@ -68,6 +68,20 @@ export default function HoldToConfirm({
     animate(scale, 0.95, { duration: 0.15, ease: 'easeOut' });
   };
 
+  // A keyboard user must be able to perform the same deliberate hold.
+  // Space/Enter held down runs the identical timer; releasing aborts.
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== ' ' && e.key !== 'Enter') return;
+    e.preventDefault();
+    if (e.repeat || holding) return;   // ignore auto-repeat
+    start();
+  };
+  const onKeyUp = (e: React.KeyboardEvent) => {
+    if (e.key !== ' ' && e.key !== 'Enter') return;
+    e.preventDefault();
+    cancel();
+  };
+
   const cancel = () => {
     if (completed) return;
     setHolding(false);
@@ -97,9 +111,13 @@ export default function HoldToConfirm({
       onPointerUp={cancel}
       onPointerLeave={cancel}
       onPointerCancel={cancel}
+      onKeyDown={onKeyDown}
+      onKeyUp={onKeyUp}
+      onBlur={cancel}
       disabled={disabled}
       className="relative w-32 h-32 flex items-center justify-center select-none disabled:opacity-40 disabled:cursor-not-allowed touch-none"
-      aria-label={label}
+      aria-label={`${label}${sublabel ? ' ' + sublabel : ''} — press and hold to confirm`}
+      aria-describedby={`${label}-hint`}
     >
       {/* Outer glow when holding */}
       <AnimatePresence>
@@ -117,13 +135,13 @@ export default function HoldToConfirm({
       {/* SVG ring — clockwise inflation */}
       <svg viewBox="0 0 100 100" className="absolute inset-0 -rotate-90" aria-hidden="true">
         {/* track */}
-        <circle cx="50" cy="50" r={R} fill="none" stroke="#1E232B" strokeWidth="3" />
+        <circle cx="50" cy="50" r={R} fill="none" stroke="#1A1A21" strokeWidth="2.5" />
         {/* fill */}
         <motion.circle
           cx="50" cy="50" r={R}
           fill="none"
           stroke={c.ring}
-          strokeWidth="3"
+          strokeWidth="2.5"
           strokeLinecap="round"
           strokeDasharray={CIRC}
           style={{ strokeDashoffset: dashOffset }}
@@ -140,13 +158,18 @@ export default function HoldToConfirm({
           {label}
         </div>
         {sublabel && (
-          <div className="text-[9px] font-mono text-neutral-500 leading-none">{sublabel}</div>
+          <div className="text-[9px] font-mono text-[#757580] leading-none">{sublabel}</div>
         )}
       </motion.div>
 
       {/* Hint below */}
-      <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-mono text-neutral-500">
-        {holding ? 'Hold…' : completed ? 'Confirmed' : 'Press & hold 1.5s'}
+      <div
+        id={`${label}-hint`}
+        role="status"
+        aria-live="polite"
+        className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-mono text-[#757580]"
+      >
+        {holding ? 'Holding…' : completed ? 'Confirmed' : 'Press and hold 1.5s'}
       </div>
     </button>
   );

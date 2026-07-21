@@ -63,12 +63,12 @@ export default function FleetDashboard({
             <div className="relative px-5 py-3 flex items-center gap-4">
               {/* hazard glyph */}
               <div className="relative w-9 h-9 shrink-0 flex items-center justify-center">
-                <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-[#F59E0B]" />
-                <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-[#F59E0B]" />
-                <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-[#F59E0B]" />
-                <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-[#F59E0B]" />
+                <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-[#A855F7]" />
+                <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-[#A855F7]" />
+                <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-[#A855F7]" />
+                <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-[#A855F7]" />
                 <motion.span
-                  className="text-lg text-[#F59E0B] leading-none"
+                  className="text-lg text-[#A855F7] leading-none"
                   animate={{ opacity: [1, 0.25, 1] }}
                   transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut' }}
                   aria-hidden="true"
@@ -79,34 +79,34 @@ export default function FleetDashboard({
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-mono uppercase tracking-[0.28em] text-[#F59E0B]">
+                  <span className="text-[9px] tracking-normal text-[#A855F7]">
                     Fault
                   </span>
-                  <span className="h-px flex-1 max-w-[60px] bg-[#F59E0B]/40" />
-                  <span className="text-[13px] font-mono uppercase tracking-[0.1em] text-[#FCD34D]">
+                  <span className="h-px flex-1 max-w-[60px] bg-[#A855F7]/40" />
+                  <span className="text-[13px] tracking-[-0.01em] text-[#A855F7]">
                     {assistanceCell.name} · assistance required
                   </span>
                 </div>
-                <div className="text-[10px] font-mono text-neutral-500 mt-1 tracking-[0.04em]">
+                <div className="text-[10px] font-mono text-[#6A6A75] mt-1 tracking-[0.04em]">
                   {assistanceCell.location} · misaligned workpiece · grasp confidence 0.31 below floor 0.75
                 </div>
               </div>
 
               {/* live counters */}
-              <div className="hidden lg:flex items-center gap-5 px-5 border-l border-[#F59E0B]/25">
+              <div className="hidden lg:flex items-center gap-5 px-5 border-l border-[#A855F7]/25">
                 <div>
-                  <div className="text-[9px] font-mono uppercase tracking-[0.16em] text-neutral-600">Halted</div>
-                  <div className="text-sm font-mono tabular-nums text-[#F59E0B] leading-tight">00:42</div>
+                  <div className="text-[9px] tracking-normal text-[#45454E]">Halted</div>
+                  <div className="text-sm font-mono tabular-nums text-[#A855F7] leading-tight">00:42</div>
                 </div>
                 <div>
-                  <div className="text-[9px] font-mono uppercase tracking-[0.16em] text-neutral-600">Skew</div>
-                  <div className="text-sm font-mono tabular-nums text-[#F59E0B] leading-tight">15°</div>
+                  <div className="text-[9px] tracking-normal text-[#45454E]">Skew</div>
+                  <div className="text-sm font-mono tabular-nums text-[#A855F7] leading-tight">15°</div>
                 </div>
               </div>
 
               <span
-                className="relative text-[10px] font-mono uppercase tracking-[0.18em] text-[#FCD34D] px-4 py-2 shrink-0 transition-colors"
-                style={{ border: '1px solid #F59E0B', background: 'rgba(245,158,11,0.14)' }}
+                className="relative text-[10px] tracking-normal text-[#A855F7] px-3 h-[30px] rounded-[5px] inline-flex items-center shrink-0 transition-colors"
+                style={{ border: '1px solid #A855F7', background: 'rgba(245,158,11,0.14)' }}
               >
                 Open console →
               </span>
@@ -116,7 +116,7 @@ export default function FleetDashboard({
       </AnimatePresence>
 
       {/* Summary strip */}
-      <div className="grid grid-cols-5 gap-px bg-[#1E232B] border-b border-[#1E232B]">
+      <div className="grid grid-cols-5 gap-px bg-[#1A1A21] border-b border-[#1A1A21]">
         <SummaryTile label="Cells" value={summary.total} />
         <SummaryTile label="Optimal" value={summary.running} color={CELL_STATUS_COLORS.running} />
         <SummaryTile
@@ -177,10 +177,10 @@ function SummaryTile({
   pulse?: boolean;
 }) {
   return (
-    <div className="bg-[#0A0C0F] px-3 py-2 flex items-center justify-between">
+    <div className="bg-[#08080B] px-3 py-2 flex items-center justify-between">
       <div>
-        <div className="text-[9px] font-mono uppercase tracking-wide text-[#6B7280]">{label}</div>
-        <div className="text-lg font-mono font-semibold tabular-nums mt-0.5" style={{ color: color ?? '#E5E7EB' }}>
+        <div className="text-[9px] tracking-normal text-[#6A6A75]">{label}</div>
+        <div className="text-lg font-mono font-semibold tabular-nums mt-0.5" style={{ color: color ?? '#FFFFFF' }}>
           {value}
         </div>
       </div>

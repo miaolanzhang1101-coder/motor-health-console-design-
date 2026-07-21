@@ -10,9 +10,9 @@ interface SlideToConfirmProps {
 }
 
 const INTENT: Record<NonNullable<SlideToConfirmProps['intent']>, { fg: string; bg: string; track: string }> = {
-  safe:   { fg: '#10B981', bg: 'rgba(16, 185, 129, 0.15)', track: 'rgba(16, 185, 129, 0.35)' },
-  warn:   { fg: '#F59E0B', bg: 'rgba(245, 158, 11, 0.15)', track: 'rgba(245, 158, 11, 0.35)' },
-  accent: { fg: '#60A5FA', bg: 'rgba(96, 165, 250, 0.15)', track: 'rgba(96, 165, 250, 0.35)' },
+  safe:   { fg: '#FFFFFF', bg: 'rgba(110, 231, 168, 0.12)', track: 'rgba(110, 231, 168, 0.32)' },
+  warn:   { fg: '#4DB8FF', bg: 'rgba(232, 179, 102, 0.12)', track: 'rgba(232, 179, 102, 0.32)' },
+  accent: { fg: '#4DB8FF', bg: 'rgba(122, 167, 232, 0.12)', track: 'rgba(122, 167, 232, 0.32)' },
 };
 
 /**
@@ -36,13 +36,43 @@ export default function SlideToConfirm({
   const c = INTENT[intent];
 
   // Fill and label opacity derive from x — no state updates during drag
-  const fillWidth = useTransform(x, (v) => v + 56);
+  const fillWidth = useTransform(x, (v) => v + 48);
   const labelOpacity = useTransform(x, [0, trackWidth * 0.5], [1, 0]);
   const doneOpacity = useTransform(x, [trackWidth * 0.7, trackWidth * 0.95], [0, 1]);
 
   const measureTrack = (el: HTMLDivElement | null) => {
     trackRef.current = el;
-    if (el) setTrackWidth(el.offsetWidth - 56);
+    if (el) setTrackWidth(el.offsetWidth - 54);
+  };
+
+  // Keyboard equivalent. The control exists to force a deliberate act,
+  // so a single Enter would defeat it — arrow keys must be pressed
+  // repeatedly to walk the handle across, and End is the explicit
+  // "I am certain" shortcut.
+  const STEP = 0.2; // five presses to cross
+  const [kbPct, setKbPct] = useState(0);
+
+  const commit = () => {
+    x.set(trackWidth);
+    setKbPct(1);
+    setConfirmed(true);
+    onConfirm();
+    setTimeout(() => { x.set(0); setKbPct(0); setConfirmed(false); }, 800);
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (disabled || confirmed) return;
+    let next: number | null = null;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') next = Math.min(1, kbPct + STEP);
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') next = Math.max(0, kbPct - STEP);
+    else if (e.key === 'End') next = 1;
+    else if (e.key === 'Home') next = 0;
+    else return;
+
+    e.preventDefault();
+    if (next >= 1) { commit(); return; }
+    setKbPct(next);
+    x.set(trackWidth * next);
   };
 
   const handleDragEnd = (_: unknown, info: PanInfo) => {
@@ -65,11 +95,17 @@ export default function SlideToConfirm({
   return (
     <div
       ref={measureTrack}
-      className="relative h-14 border-2 overflow-hidden select-none touch-none"
-      style={{ borderColor: c.track, background: '#0A0C0F' }}
-      role="button"
-      aria-label={label}
+      className="relative h-11 rounded-[6px] border overflow-hidden select-none touch-none"
+      style={{ borderColor: c.track, background: '#08080B' }}
+      role="slider"
+      tabIndex={disabled ? -1 : 0}
+      aria-label={`${label} — drag right, or use arrow keys`}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round((confirmed ? 1 : kbPct) * 100)}
+      aria-valuetext={confirmed ? 'Confirmed' : `${Math.round(kbPct * 100)} percent`}
       aria-disabled={disabled}
+      onKeyDown={onKeyDown}
     >
       {/* Filled portion — grows behind the handle */}
       <motion.div
@@ -83,17 +119,17 @@ export default function SlideToConfirm({
         style={{ opacity: labelOpacity }}
       >
         <div className="flex items-center gap-2">
-          <span className="text-[13px] font-mono uppercase tracking-widest font-semibold" style={{ color: c.fg }}>
+          <span className="text-[11px] tracking-[0.02em]" style={{ color: c.fg }}>
             {label}
           </span>
           <motion.span
-            className="text-lg"
+            className="text-[13px]"
             style={{ color: c.fg }}
             animate={reduceMotion ? {} : { x: [0, 4, 0] }}
             transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
             aria-hidden="true"
           >
-            ▸▸▸
+            ›››
           </motion.span>
         </div>
       </motion.div>
@@ -103,7 +139,7 @@ export default function SlideToConfirm({
         className="absolute inset-0 flex items-center justify-center pointer-events-none"
         style={{ opacity: doneOpacity }}
       >
-        <span className="text-[13px] font-mono uppercase tracking-widest font-semibold" style={{ color: c.fg }}>
+        <span className="text-[11px] tracking-[0.02em]" style={{ color: c.fg }}>
           {confirmed ? 'Confirmed' : 'Release to confirm'}
         </span>
       </motion.div>
@@ -117,9 +153,9 @@ export default function SlideToConfirm({
         onDragEnd={handleDragEnd}
         style={{ x, background: c.fg }}
         whileTap={reduceMotion ? undefined : { scale: 0.96 }}
-        className="absolute left-1 top-1 bottom-1 w-14 flex items-center justify-center cursor-grab active:cursor-grabbing text-neutral-900"
+        className="absolute left-[3px] top-[3px] bottom-[3px] w-12 rounded-[4px] flex items-center justify-center cursor-grab active:cursor-grabbing text-[#000000]"
       >
-        <div className="text-2xl leading-none" aria-hidden="true">›</div>
+        <div className="text-[15px] leading-none" aria-hidden="true">›</div>
       </motion.div>
     </div>
   );
